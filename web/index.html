@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
+<style>
+  body {padding: 0; margin: 0}
+  html, body, #map {height: 100%; width: 100%;}
+</style>
+</head>
+<body>
+<div id='map'></div>
+<script>
+const items = [
+  {"place": "Place A", "lnglat": [139.741, 35.715], "icon": "water"},
+  {"place": "Place B", "lnglat": [139.731, 35.721], "icon": "water"},
+  {"place": "Place B", "lnglat": [139.721, 35.721], "icon": "snack"},
+];
+
+const LeafIcon = L.Icon.extend({
+    options: {
+        iconSize:     [64, 64],
+        popupAnchor:  [-3, -76]
+    }
+});
+
+const icons = {
+  "water": new LeafIcon({iconUrl: '/icons/bottle_water.png', name: "水"}),
+  "snack": new LeafIcon({iconUrl: '/icons/sweets_pocky.png', name: "おやつ"})
+}
+
+// init map
+const map_pale = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html#std">国土地理院</a>',
+});
+const map_std = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html#std">国土地理院</a>',
+});
+const map = L.map('map',{
+  center: [35.715047,139.7483381],
+  zoom: 13,
+  minZoom: 11,
+  maxZoom: 16,
+  layers: [map_pale]
+});
+const basemaps = {
+  "pale": map_pale,
+  "std":map_std
+};
+const itemlayers = {};
+Object.keys(icons).map(icon=>{
+  itemlayers[icon] = L.layerGroup();
+  map.addLayer(itemlayers[icon])
+});
+
+L.control.layers(basemaps, itemlayers).addTo(map);
+L.control.scale().addTo(map);
+
+// add items to map
+items.map(item => {
+  L.marker([item.lnglat[1],item.lnglat[0]], {icon: icons[item.icon]}).addTo(itemlayers[item.icon]);
+});
+
+</script>
+ 
+</body>
+</html>
