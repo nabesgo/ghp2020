@@ -16,60 +16,80 @@
 <body>
 <div id='map'></div>
 <script>
-const items = [
-  {"itemid": "x001", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
-  {"itemid": "x002", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
-  {"itemid": "x003", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
-  {"itemid": "x004", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "snack"},
-  {"itemid": "x014", "place": "XXXXX公民館", "lnglat": [139.731, 35.721], "itemtype": "water"},
-  {"itemid": "x025", "place": "YYYYY事務所", "lnglat": [139.721, 35.721], "itemtype": "snack"},
-];
-const places = {};
-items.reduce((p,i)=>{
-  if(!p[i.place]){p[i.place]={lnglat: [i.lnglat[1], i.lnglat[0]], items: {}}};
-  if(!p[i.place].items[i.itemtype]){p[i.place].items[i.itemtype] = 0};
-  p[i.place].items[i.itemtype] += 1;
-  return p;
-}, places)
-
-// def icons
-const LeafIcon = L.Icon.extend({ options: { iconSize:     [64, 64], popupAnchor:  [0, -32] } });
-const icons = {
-  "water": new LeafIcon({iconUrl: '/ghp2020/web/icons/bottle_water.png', name: "水"}),
-  "snack": new LeafIcon({iconUrl: '/ghp2020/web/icons/sweets_pocky.png', name: "おやつ"})
-}
-
-// init map
-const basemaps = {
-  "淡色": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html#std">国土地理院</a>' }),
-  "標準":  L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html#std">国土地理院</a>' })
-};
-const map = L.map('map',{
-  center: [35.715047,139.7483381],
-  zoom: 14,
-  minZoom: 11,
-  maxZoom: 16,
-  layers: [basemaps["淡色"]]
-});
-const itemlayers = {};
-Object.keys(icons).map(icon=>{
-  itemlayers[icon] = L.layerGroup();
-  map.addLayer(itemlayers[icon])
-});
-
-L.control.layers(basemaps, itemlayers).addTo(map);
-L.control.scale().addTo(map);
-
-// add items to map
-items.reduce((done, item)=>{
-  if(!([item.itemtype, item.place].join("") in done)){
-    const m = L.marker(places[item.place].lnglat, {icon: icons[item.itemtype]}).addTo(itemlayers[item.itemtype]);
-    const l = Object.keys(places[item.place].items).map(i=>`${icons[i].options.name}: ${places[item.place].items[i]}`);
-    m.bindPopup(`${item.place}<br/>${l.join("<br/>")}`, {className: 'itempopup'});
-    done[[item.itemtype, item.place].join("")] = true;
+// app
+const app = {
+  items: null,
+  places: null,
+  getItems: ()=>{
+    app.items = [];
+    app.places = [];
+    // (TODO: replace fetch API)
+    app.items.push(
+      {"itemid": "x001", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
+      {"itemid": "x002", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
+      {"itemid": "x003", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
+      {"itemid": "x004", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "snack"},
+      {"itemid": "x014", "place": "XXXXX公民館", "lnglat": [139.731, 35.721], "itemtype": "water"},
+      {"itemid": "x025", "place": "YYYYY事務所", "lnglat": [139.721, 35.721], "itemtype": "snack"},
+    );
+    app.items.reduce((p,i)=>{
+      if(!p[i.place]){p[i.place]={lnglat: [i.lnglat[1], i.lnglat[0]], items: {}}};
+      if(!p[i.place].items[i.itemtype]){p[i.place].items[i.itemtype] = 0};
+      p[i.place].items[i.itemtype] += 1;
+      return p;
+    }, app.places)
+  },
+  mapItems: ()=>{
   }
-  return done;
-}, {});
+};
+
+// view
+const view = {
+  basemaps: {
+    "淡色": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html#std">国土地理院</a>' }),
+    "標準":  L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html#std">国土地理院</a>' })
+  },
+  map: null,
+  LeafIcon: L.Icon.extend({ options: { iconSize: [64, 64], popupAnchor:  [0, -32] } }),
+  icons: {},
+  itemlayers: {},
+  init: ()=>{
+    view.icons.water = new view.LeafIcon({iconUrl: '/ghp2020/web/icons/bottle_water.png', name: "水"});
+    view.icons.snack = new view.LeafIcon({iconUrl: '/ghp2020/web/icons/sweets_pocky.png', name: "おやつ"});
+    view.map = L.map('map',{
+      center: [35.715047,139.7483381],
+      zoom: 14, minZoom: 11, maxZoom: 16,
+      layers: [view.basemaps["淡色"]]
+    });
+    Object.keys(view.icons).map(icon=>{
+      view.itemlayers[icon] = L.layerGroup();
+      view.map.addLayer(view.itemlayers[icon])
+    });
+    L.control.layers(view.basemaps, view.itemlayers).addTo(view.map);
+    L.control.scale().addTo(view.map);
+  },
+  clearItemMarkers: ()=>{
+    Object.keys(view.itemlayers).forEach(l => view.itemlayers[l].clearLayers());
+  },
+  addItemMarker: (itemtype, lnglat, place, items)=>{
+    const m = L.marker(lnglat, {icon: view.icons[itemtype]}).addTo(view.itemlayers[itemtype]);
+    const l = Object.keys(items).map(i=>`${view.icons[i].options.name}: ${app.places[place].items[i]}`).join("<br/>");
+    m.bindPopup(`${place}<br/>${l}`, {className: 'itempopup'});
+  }
+}
+view.init();
+
+window.onload = ()=>{
+  app.getItems();
+  view.clearItemMarkers();
+  app.items.reduce((done, item)=>{
+    if(!([item.itemtype, item.place].join("") in done)){
+      view.addItemMarker(item.itemtype, app.places[item.place].lnglat, item.place, app.places[item.place].items);
+      done[[item.itemtype, item.place].join("")] = true;
+    }
+    return done;
+  }, {});
+}
 </script>
  
 </body>
