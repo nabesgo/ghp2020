@@ -10,47 +10,47 @@
 <style>
   body {padding: 0; margin: 0}
   html, body, #map {height: 100%; width: 100%;}
+  .itempopup div {color: #222}
 </style>
 </head>
 <body>
 <div id='map'></div>
 <script>
 const items = [
-  {"place": "Place A", "lnglat": [139.741, 35.715], "icon": "water"},
-  {"place": "Place B", "lnglat": [139.731, 35.721], "icon": "water"},
-  {"place": "Place B", "lnglat": [139.721, 35.721], "icon": "snack"},
+  {"itemid": "x001", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
+  {"itemid": "x002", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
+  {"itemid": "x003", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
+  {"itemid": "x004", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "snack"},
+  {"itemid": "x014", "place": "XXXXX公民館", "lnglat": [139.731, 35.721], "itemtype": "water"},
+  {"itemid": "x025", "place": "YYYYY事務所", "lnglat": [139.721, 35.721], "itemtype": "snack"},
 ];
+const places = {};
+items.reduce((p,i)=>{
+  if(!p[i.place]){p[i.place]={lnglat: [i.lnglat[1], i.lnglat[0]], items: {}}};
+  if(!p[i.place].items[i.itemtype]){p[i.place].items[i.itemtype] = 0};
+  p[i.place].items[i.itemtype] += 1;
+  return p;
+}, places)
 
-const LeafIcon = L.Icon.extend({
-    options: {
-        iconSize:     [64, 64],
-        popupAnchor:  [-3, -76]
-    }
-});
-
+// def icons
+const LeafIcon = L.Icon.extend({ options: { iconSize:     [64, 64], popupAnchor:  [0, -32] } });
 const icons = {
   "water": new LeafIcon({iconUrl: '/ghp2020/web/icons/bottle_water.png', name: "水"}),
   "snack": new LeafIcon({iconUrl: '/ghp2020/web/icons/sweets_pocky.png', name: "おやつ"})
 }
 
 // init map
-const map_pale = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html#std">国土地理院</a>',
-});
-const map_std = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html#std">国土地理院</a>',
-});
+const basemaps = {
+  "淡色": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html#std">国土地理院</a>' }),
+  "標準":  L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html#std">国土地理院</a>' })
+};
 const map = L.map('map',{
   center: [35.715047,139.7483381],
-  zoom: 13,
+  zoom: 14,
   minZoom: 11,
   maxZoom: 16,
-  layers: [map_pale]
+  layers: [basemaps["淡色"]]
 });
-const basemaps = {
-  "pale": map_pale,
-  "std":map_std
-};
 const itemlayers = {};
 Object.keys(icons).map(icon=>{
   itemlayers[icon] = L.layerGroup();
@@ -61,10 +61,15 @@ L.control.layers(basemaps, itemlayers).addTo(map);
 L.control.scale().addTo(map);
 
 // add items to map
-items.map(item => {
-  L.marker([item.lnglat[1],item.lnglat[0]], {icon: icons[item.icon]}).addTo(itemlayers[item.icon]);
-});
-
+items.reduce((done, item)=>{
+  if(!([item.itemtype, item.place].join("") in done)){
+    const m = L.marker(places[item.place].lnglat, {icon: icons[item.itemtype]}).addTo(itemlayers[item.itemtype]);
+    const l = Object.keys(places[item.place].items).map(i=>`${icons[i].options.name}: ${places[item.place].items[i]}`);
+    m.bindPopup(`${item.place}<br/>${l.join("<br/>")}`, {className: 'itempopup'});
+    done[[item.itemtype, item.place].join("")] = true;
+  }
+  return done;
+}, {});
 </script>
  
 </body>
