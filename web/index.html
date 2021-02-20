@@ -24,13 +24,14 @@ const app = {
     app.items = [];
     app.places = [];
     // (TODO: replace fetch API)
+    console.log("fetching api")
     app.items.push(
       {"itemid": "x001", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
       {"itemid": "x002", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
       {"itemid": "x003", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
       {"itemid": "x004", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "snack"},
-      {"itemid": "x014", "place": "XXXXX公民館", "lnglat": [139.731, 35.721], "itemtype": "water"},
-      {"itemid": "x025", "place": "YYYYY事務所", "lnglat": [139.721, 35.721], "itemtype": "snack"},
+      {"itemid": "x014", "place": "XXXXX公民館", "lnglat": [139.73 + Math.random()/50, 35.721], "itemtype": "water"},
+      {"itemid": "x025", "place": "YYYYY事務所", "lnglat": [139.721, 35.72 + Math.random()/50], "itemtype": "snack"},
     );
     app.items.reduce((p,i)=>{
       if(!p[i.place]){p[i.place]={lnglat: [i.lnglat[1], i.lnglat[0]], items: {}}};
@@ -53,6 +54,7 @@ const view = {
   LeafIcon: L.Icon.extend({ options: { iconSize: [64, 64], popupAnchor:  [0, -32] } }),
   icons: {},
   itemlayers: {},
+  actionControl: null,
   init: ()=>{
     view.icons.water = new view.LeafIcon({iconUrl: '/ghp2020/web/icons/bottle_water.png', name: "水"});
     view.icons.snack = new view.LeafIcon({iconUrl: '/ghp2020/web/icons/sweets_pocky.png', name: "おやつ"});
@@ -68,6 +70,31 @@ const view = {
     L.control.layers(view.basemaps, view.itemlayers).addTo(view.map);
     L.control.scale().addTo(view.map);
   },
+  initControl: (controls) => {
+    L.CustomControl = L.Control.extend({
+      onAdd: function(map) {
+        const div = L.DomUtil.create('div', 'custom-panel');
+        controls.forEach(control=>{
+          const btnreload = document.createElement('button');
+          btnreload.innerText = control.name;
+          btnreload.addEventListener('click', e=>{
+            control.action(e);
+          });
+          div.append(btnreload);
+        });
+        return div;
+      },
+      onRemove: function(map) {
+      },
+      _format: function(num) {
+          return (('    ') + num.toFixed(7)).slice(-12);
+      }
+    });
+    L.customControl = function(opts) {
+      return new L.CustomControl(opts);
+    }
+    view.actionControl = L.customControl({ position: 'bottomright' }).addTo(view.map)
+  },
   clearItemMarkers: ()=>{
     Object.keys(view.itemlayers).forEach(l => view.itemlayers[l].clearLayers());
   },
@@ -80,17 +107,26 @@ const view = {
 view.init();
 
 window.onload = ()=>{
-  app.getItems();
-  view.clearItemMarkers();
-  app.items.reduce((done, item)=>{
-    if(!([item.itemtype, item.place].join("") in done)){
-      view.addItemMarker(item.itemtype, app.places[item.place].lnglat, item.place, app.places[item.place].items);
-      done[[item.itemtype, item.place].join("")] = true;
-    }
-    return done;
-  }, {});
+  const reload = ()=>{
+    app.getItems();
+    view.clearItemMarkers();
+    app.items.reduce((done, item)=>{
+      if(!([item.itemtype, item.place].join("") in done)){
+        view.addItemMarker(item.itemtype, app.places[item.place].lnglat, item.place, app.places[item.place].items);
+        done[[item.itemtype, item.place].join("")] = true;
+      }
+      return done;
+    }, {});
+  };
+  const debug = e=>{
+    console.log(e);
+  }
+  view.initControl([
+    { name: "reload", action: reload },
+    { name: "debug", action: debug}
+  ]);
+  reload();
 }
 </script>
- 
 </body>
 </html>
