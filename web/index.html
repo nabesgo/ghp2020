@@ -21,24 +21,36 @@
 const app = {
   items: null,
   places: null,
+  getPlaces: ()=>{
+    // (TODO: replace fetch API)
+    app.places = {
+      "礫川小学校": {latlng: [35.720792, 139.7375218]},
+      "柳町小学校": {latlng: [35.7143136, 139.7480088]},
+      "指ヶ谷小学校": {latlng: [35.7173433, 139.7584723]}
+    };
+  },
   getItems: ()=>{
     app.items = [];
-    app.places = [];
     // (TODO: replace fetch API)
     console.log("fetching api")
     app.items.push(
-      {"itemid": "x001", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
-      {"itemid": "x002", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
-      {"itemid": "x003", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
-      {"itemid": "x004", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "snack"},
-      {"itemid": "x004", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "milk"},
-      {"itemid": "x004", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "milk"},
-      {"itemid": "x014", "place": "XXXXX公民館", "lnglat": [139.73 + Math.random()/50, 35.721], "itemtype": "water"},
-      {"itemid": "x025", "place": "YYYYY事務所", "lnglat": [139.721, 35.72 + Math.random()/50], "itemtype": "snack"},
-      {"itemid": "x025", "place": "ZZZZZセンター", "lnglat": [139.74, 35.7 + Math.random()/50], "itemtype": "milk"},
+      {"itemid": "x001", "place": "礫川小学校", "itemtype": "water"},
+      {"itemid": "x002", "place": "礫川小学校", "itemtype": "water"},
+      {"itemid": "x002", "place": "礫川小学校", "itemtype": "water"},
+      {"itemid": "x002", "place": "礫川小学校", "itemtype": "water"},
+      {"itemid": "x003", "place": "礫川小学校", "itemtype": "water"},
+      {"itemid": "x003", "place": "礫川小学校", "itemtype": "water"},
+      {"itemid": "x003", "place": "礫川小学校", "itemtype": "water"},
+      {"itemid": "x004", "place": "礫川小学校", "itemtype": "snack"},
+      {"itemid": "x004", "place": "礫川小学校", "itemtype": "milk"},
+      {"itemid": "x004", "place": "礫川小学校", "itemtype": "milk"},
+      {"itemid": "x014", "place": "柳町小学校", "itemtype": "water"},
+      {"itemid": "x015", "place": "柳町小学校", "itemtype": "snack"},
+      {"itemid": "x025", "place": "指ヶ谷小学校", "itemtype": "milk"},
     );
     app.items.reduce((p,i)=>{
-      if(!p[i.place]){p[i.place]={lnglat: [i.lnglat[1], i.lnglat[0]], items: {}}};
+      if(!p[i.place]){p[i.place]={latlng: [app.places[i.place].latlng[0], app.places[i.place].latlng[1]], items: {}}};
+      if(!p[i.place].items){p[i.place].items = {}};
       if(!p[i.place].items[i.itemtype]){p[i.place].items[i.itemtype] = 0};
       p[i.place].items[i.itemtype] += 1;
       return p;
@@ -47,6 +59,7 @@ const app = {
   mapItems: ()=>{
   }
 };
+app.getPlaces();
 
 // view
 const view = {
@@ -56,13 +69,14 @@ const view = {
   },
   map: null,
   LeafIcon: L.Icon.extend({ options: { iconSize: [64, 64], popupAnchor:  [0, -32] } }),
-  icons: {},
+  icons: {
+    water:{iconUrl: '/ghp2020/web/icons/bottle_water.png', name: "水"},
+    snack: {iconUrl: '/ghp2020/web/icons/sweets_pocky.png', name: "おやつ"},
+    milk: {iconUrl: '/ghp2020/web/icons/baby_milk_mark.png', name: "ミルク"},
+  },
   itemlayers: {},
   actionControl: null,
   init: ()=>{
-    view.icons.water = new view.LeafIcon({iconUrl: '/ghp2020/web/icons/bottle_water.png', name: "水"});
-    view.icons.snack = new view.LeafIcon({iconUrl: '/ghp2020/web/icons/sweets_pocky.png', name: "おやつ"});
-    view.icons.milk = new view.LeafIcon({iconUrl: '/ghp2020/web/icons/baby_milk_mark.png', name: "ミルク"});
     view.map = L.map('map',{
       center: [35.715047,139.7483381],
       zoom: 14, minZoom: 11, maxZoom: 17,
@@ -104,9 +118,13 @@ const view = {
   clearItemMarkers: ()=>{
     Object.keys(view.itemlayers).forEach(l => view.itemlayers[l].clearLayers());
   },
-  addItemMarker: (itemtype, lnglat, place, items)=>{
-    const m = L.marker(lnglat, {icon: view.icons[itemtype]}).addTo(view.itemlayers[itemtype]);
-    const l = Object.keys(items).map(i=>`${view.icons[i].options.name}: ${app.places[place].items[i]}`).join("<br/>");
+  createIcon: (itemtype, size) =>{
+    return new view.LeafIcon({iconUrl: view.icons[itemtype].iconUrl, name: view.icons[itemtype].name, iconSize: [size, size]});
+  },
+  addItemMarker: (itemtype, latlng, place, items)=>{
+    const m = L.marker(latlng, {icon: view.createIcon(itemtype, Math.floor(64*(1+app.places[place].items[itemtype]/5),1))}).addTo(view.itemlayers[itemtype]);
+    //const m = L.marker(latlng, {icon: view.icons[itemtype], }).addTo(view.itemlayers[itemtype]);
+    const l = Object.keys(items).map(i=>`${view.icons[i].name}: ${app.places[place].items[i]}`).join("<br/>");
     m.bindPopup(`${place}<br/>${l}`, {className: 'itempopup', maxWidth: 500});
   },
   toggleItemLayers: layers => {
@@ -123,14 +141,15 @@ window.onload = ()=>{
     let b2 = [0, 0];
     app.items.reduce((done, item)=>{
       if(!([item.itemtype, item.place].join("") in done)){
-        const lnglat = app.places[item.place].lnglat;
-        b1 = [Math.min(b1[0], lnglat[0] - .01), Math.min(b1[1], lnglat[1] - .01)];
-        b2 = [Math.max(b2[0], lnglat[0] + .01), Math.max(b2[1], lnglat[1] + .01)];
-        view.addItemMarker(item.itemtype, lnglat, item.place, app.places[item.place].items);
+        const latlng = app.places[item.place].latlng;
+        b1 = [Math.min(b1[0], latlng[0] - .01), Math.min(b1[1], latlng[1] - .01)];
+        b2 = [Math.max(b2[0], latlng[0] + .01), Math.max(b2[1], latlng[1] + .01)];
+        view.addItemMarker(item.itemtype, latlng, item.place, app.places[item.place].items);
         done[[item.itemtype, item.place].join("")] = true;
       }
       return done;
     }, {});
+        console.log(b1,b2);
     view.map.fitBounds(L.latLngBounds(b1, b2));
   };
   const debug = e=>{
