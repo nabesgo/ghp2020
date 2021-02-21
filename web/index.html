@@ -35,12 +35,13 @@ const app = {
     app.items = [];
     Object.keys(app.places).forEach(p=>app.places[p].items = {})
     console.log("fetching api")
+      /*
     const res = await window.fetch('https://script.google.com/macros/s/AKfycbw4SQ2kSBv_DzqDRV3gPRMigl4n-gr1zxVKczySZZjuknZMrU5Ub8QM8Q/exec?callback=googleDocCallback');
     const rej = await res.json();
     rej.length()&&rej.forEach(r => {
       app.items.push({"itemid": r["ID"], "place": r["どの避難所に配置しますか？"], "itemtype": ({"水":"water","おやつ":"snack","ミルク":"milk"})[r[""]]})
     });
-      /*
+    */
     app.items.push(
       {"itemid": "x001", "place": "礫川小学校", "itemtype": "water"},
       {"itemid": "x002", "place": "礫川小学校", "itemtype": "water"},
@@ -56,7 +57,6 @@ const app = {
       {"itemid": "x015", "place": "柳町小学校", "itemtype": "snack"},
       {"itemid": "x025", "place": "指ヶ谷小学校", "itemtype": "milk"},
     );
-    */
     app.items.reduce((p,i)=>{
       if(!p[i.place]){p[i.place]={latlng: [app.places[i.place].latlng[0], app.places[i.place].latlng[1]], items: {}}};
       if(!p[i.place].items[i.itemtype]){p[i.place].items[i.itemtype] = 0};
