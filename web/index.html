@@ -26,11 +26,14 @@ const app = {
     app.places = {
       "礫川小学校": {latlng: [35.720792, 139.7375218]},
       "柳町小学校": {latlng: [35.7143136, 139.7480088]},
-      "指ヶ谷小学校": {latlng: [35.7173433, 139.7584723]}
+      "指ヶ谷小学校": {latlng: [35.7173433, 139.7584723]},
+      "〇〇集会所": {latlng: [35.7073433, 139.7484723]},
+      "凹凸センター": {latlng: [35.7073433, 139.7584723]},
     };
   },
   getItems: ()=>{
     app.items = [];
+    Object.keys(app.places).forEach(p=>app.places[p].items = {})
     // (TODO: replace fetch API)
     console.log("fetching api")
     app.items.push(
@@ -50,11 +53,13 @@ const app = {
     );
     app.items.reduce((p,i)=>{
       if(!p[i.place]){p[i.place]={latlng: [app.places[i.place].latlng[0], app.places[i.place].latlng[1]], items: {}}};
-      if(!p[i.place].items){p[i.place].items = {}};
       if(!p[i.place].items[i.itemtype]){p[i.place].items[i.itemtype] = 0};
       p[i.place].items[i.itemtype] += 1;
       return p;
     }, app.places)
+    Object.keys(app.places).filter(p=>Object.keys(app.places[p].items).length==0).forEach(p=>{
+      app.places[p].items['empty'] = 1;
+    });
   },
   mapItems: ()=>{
   }
@@ -73,6 +78,7 @@ const view = {
     water:{iconUrl: '/ghp2020/web/icons/bottle_water.png', name: "水"},
     snack: {iconUrl: '/ghp2020/web/icons/sweets_pocky.png', name: "おやつ"},
     milk: {iconUrl: '/ghp2020/web/icons/baby_milk_mark.png', name: "ミルク"},
+    empty: {iconUrl: '/ghp2020/web/icons/box_kara_hako.png', name: "物資なし"},
   },
   itemlayers: {},
   actionControl: null,
@@ -123,8 +129,7 @@ const view = {
   },
   addItemMarker: (itemtype, latlng, place, items)=>{
     const m = L.marker(latlng, {icon: view.createIcon(itemtype, Math.floor(64*(1+app.places[place].items[itemtype]/5),1))}).addTo(view.itemlayers[itemtype]);
-    //const m = L.marker(latlng, {icon: view.icons[itemtype], }).addTo(view.itemlayers[itemtype]);
-    const l = Object.keys(items).map(i=>`${view.icons[i].name}: ${app.places[place].items[i]}`).join("<br/>");
+    const l = Object.keys(items).map(i=>`${view.icons[i].name}: ${i=='empty'?'':app.places[place].items[i]}`).join("<br/>");
     m.bindPopup(`${place}<br/>${l}`, {className: 'itempopup', maxWidth: 500});
   },
   toggleItemLayers: layers => {
@@ -139,17 +144,14 @@ window.onload = ()=>{
     view.clearItemMarkers();
     let b1 = [90, 180];
     let b2 = [0, 0];
-    app.items.reduce((done, item)=>{
-      if(!([item.itemtype, item.place].join("") in done)){
-        const latlng = app.places[item.place].latlng;
+    Object.keys(app.places).forEach(p=>{
+      Object.keys(app.places[p].items).forEach(i=>{
+        const latlng = app.places[p].latlng;
         b1 = [Math.min(b1[0], latlng[0] - .01), Math.min(b1[1], latlng[1] - .01)];
         b2 = [Math.max(b2[0], latlng[0] + .01), Math.max(b2[1], latlng[1] + .01)];
-        view.addItemMarker(item.itemtype, latlng, item.place, app.places[item.place].items);
-        done[[item.itemtype, item.place].join("")] = true;
-      }
-      return done;
-    }, {});
-        console.log(b1,b2);
+        view.addItemMarker(i, latlng, p, app.places[p].items);
+      });
+    });
     view.map.fitBounds(L.latLngBounds(b1, b2));
   };
   const debug = e=>{
