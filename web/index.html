@@ -31,17 +31,18 @@ const app = {
       "凹凸センター": {latlng: [35.7073433, 139.7584723]},
     };
   },
-  getItems: async ()=>{
+  getItems:()=>{
+    return new Promise((res, rej)=>{
     app.items = [];
     Object.keys(app.places).forEach(p=>app.places[p].items = {})
     console.log("fetching api")
+    window.fetch('https://script.google.com/macros/s/AKfycbw4SQ2kSBv_DzqDRV3gPRMigl4n-gr1zxVKczySZZjuknZMrU5Ub8QM8Q/exec').then(r=>r.text()).then(t=>{
+      const j = JSON.parse(t);
+      console.log("parse json")
+      j.forEach(r => {
+        app.items.push({"itemid": r["ID"], "place": r["どの避難所に配置しますか？"], "itemtype": ({"水":"water","おやつ":"snack","ミルク":"milk"})[r["支援物資の種類は？"]]})
+      });
       /*
-    const res = await window.fetch('https://script.google.com/macros/s/AKfycbw4SQ2kSBv_DzqDRV3gPRMigl4n-gr1zxVKczySZZjuknZMrU5Ub8QM8Q/exec?callback=googleDocCallback');
-    const rej = await res.json();
-    rej.length()&&rej.forEach(r => {
-      app.items.push({"itemid": r["ID"], "place": r["どの避難所に配置しますか？"], "itemtype": ({"水":"water","おやつ":"snack","ミルク":"milk"})[r[""]]})
-    });
-    */
     app.items.push(
       {"itemid": "x001", "place": "礫川小学校", "itemtype": "water"},
       {"itemid": "x002", "place": "礫川小学校", "itemtype": "water"},
@@ -57,6 +58,7 @@ const app = {
       {"itemid": "x015", "place": "柳町小学校", "itemtype": "snack"},
       {"itemid": "x025", "place": "指ヶ谷小学校", "itemtype": "milk"},
     );
+    */
     app.items.reduce((p,i)=>{
       if(!p[i.place]){p[i.place]={latlng: [app.places[i.place].latlng[0], app.places[i.place].latlng[1]], items: {}}};
       if(!p[i.place].items[i.itemtype]){p[i.place].items[i.itemtype] = 0};
@@ -65,6 +67,8 @@ const app = {
     }, app.places)
     Object.keys(app.places).filter(p=>Object.keys(app.places[p].items).length==0).forEach(p=>{
       app.places[p].items['empty'] = 1;
+    });
+    }).then(()=>res());
     });
   },
   mapItems: ()=>{
@@ -83,7 +87,7 @@ const view = {
   LeafIcon: L.Icon.extend({ options: { iconSize: [64, 64], popupAnchor:  [0, -32] } }),
   icons: {
     water:{iconUrlBase: '/ghp2020/web/icons/water', name: "水"},
-    snack: {iconUrlBase: '/ghp2020/web/icons/sweets', name: "おやつ"},
+    snack: {iconUrlBase: '/ghp2020/web/icons/snack', name: "おやつ"},
     milk: {iconUrlBase: '/ghp2020/web/icons/milk', name: "ミルク"},
     empty: {iconUrl: '/ghp2020/web/icons/box_kara_hako.png', name: "物資なし"},
   },
@@ -156,7 +160,8 @@ view.init();
 
 window.onload = ()=>{
   const reload = ()=>{
-    app.getItems();
+    app.getItems().then(()=>{
+      console.log("update view")
     view.clearItemMarkers();
     let b1 = [90, 180];
     let b2 = [0, 0];
@@ -169,6 +174,7 @@ window.onload = ()=>{
       });
     });
     view.map.fitBounds(L.latLngBounds(b1, b2));
+    });
   };
   const debug = e=>{
     console.log(e);
