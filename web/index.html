@@ -27,8 +27,8 @@ const app = {
       "礫川小学校": {latlng: [35.720792, 139.7375218]},
       "柳町小学校": {latlng: [35.7143136, 139.7480088]},
       "指ヶ谷小学校": {latlng: [35.7173433, 139.7584723]},
-      "〇〇集会所": {latlng: [35.7073433, 139.7484723]},
-      "凹凸センター": {latlng: [35.7073433, 139.7584723]},
+      "文京江戸川橋体育館": {latlng: [35.7073433, 139.7484723]},
+      "教育センター": {latlng: [35.7073433, 139.7584723]},
     };
   },
   getItems:()=>{
@@ -42,15 +42,10 @@ const app = {
       j.filter(i=>!(i["受け取り日時"])).forEach(r => {
         app.items.push({"itemid": r["ID"], "place": r["どの避難所に配置しますか？"], "itemtype": ({"水":"water","おやつ":"snack","粉ミルク":"milk"})[r["支援物資の種類は？"]]})
       });
-      /*
+      /* dummy for debug
     app.items.push(
       {"itemid": "x001", "place": "礫川小学校", "itemtype": "water"},
       {"itemid": "x002", "place": "礫川小学校", "itemtype": "water"},
-      {"itemid": "x002", "place": "礫川小学校", "itemtype": "water"},
-      {"itemid": "x002", "place": "礫川小学校", "itemtype": "water"},
-      {"itemid": "x003", "place": "礫川小学校", "itemtype": "water"},
-      {"itemid": "x003", "place": "礫川小学校", "itemtype": "water"},
-      {"itemid": "x003", "place": "礫川小学校", "itemtype": "water"},
       {"itemid": "x004", "place": "礫川小学校", "itemtype": "snack"},
       {"itemid": "x004", "place": "礫川小学校", "itemtype": "milk"},
       {"itemid": "x004", "place": "礫川小学校", "itemtype": "milk"},
