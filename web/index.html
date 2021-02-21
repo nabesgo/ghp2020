@@ -39,8 +39,8 @@ const app = {
     window.fetch('https://script.google.com/macros/s/AKfycbw4SQ2kSBv_DzqDRV3gPRMigl4n-gr1zxVKczySZZjuknZMrU5Ub8QM8Q/exec').then(r=>r.text()).then(t=>{
       const j = JSON.parse(t);
       console.log("parse json")
-      j.forEach(r => {
-        app.items.push({"itemid": r["ID"], "place": r["どの避難所に配置しますか？"], "itemtype": ({"水":"water","おやつ":"snack","ミルク":"milk"})[r["支援物資の種類は？"]]})
+      j.filter(i=>!(i["受け取り日時"])).forEach(r => {
+        app.items.push({"itemid": r["ID"], "place": r["どの避難所に配置しますか？"], "itemtype": ({"水":"water","おやつ":"snack","粉ミルク":"milk"})[r["支援物資の種類は？"]]})
       });
       /*
     app.items.push(
@@ -88,7 +88,7 @@ const view = {
   icons: {
     water:{iconUrlBase: '/ghp2020/web/icons/water', name: "水"},
     snack: {iconUrlBase: '/ghp2020/web/icons/snack', name: "おやつ"},
-    milk: {iconUrlBase: '/ghp2020/web/icons/milk', name: "ミルク"},
+    milk: {iconUrlBase: '/ghp2020/web/icons/milk', name: "粉ミルク"},
     empty: {iconUrl: '/ghp2020/web/icons/box_kara_hako.png', name: "物資なし"},
   },
   itemlayers: {},
