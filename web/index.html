@@ -142,8 +142,8 @@ const view = {
     }
   },
   addItemMarker: (itemtype, latlng, place, items)=>{
+    latlng = [latlng[0] + ({"water":0, "empty":0, "snack":0.0005, "milk":-0.0005})[itemtype], latlng[1]];
     const m = L.marker(latlng, {icon: view.createIcon(itemtype, app.places[place].items[itemtype])}).addTo(view.itemlayers[itemtype]);
-    //const m = L.marker(latlng, {icon: view.createIcon(itemtype, Math.floor(64*(1+app.places[place].items[itemtype]/5),1))}).addTo(view.itemlayers[itemtype]);
     const l = Object.keys(items).map(i=>`${view.icons[i].name}: ${i=='empty'?'':app.places[place].items[i]}`).join("<br/>");
     m.bindPopup(`${place}<br/>${l}`, {className: 'itempopup', maxWidth: 500});
   },
