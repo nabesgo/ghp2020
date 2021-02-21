@@ -3,14 +3,15 @@
 <head>
 <meta charset="utf-8">
 <title>map</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
 <style>
   body {padding: 0; margin: 0}
   html, body, #map {height: 100%; width: 100%;}
-  .itempopup div {color: #222}
+  .itempopup div {font-size:24pt}
+  .custom-panel {background: #eee; padding: 10px}
+  .custom-panel i{padding: 10px}
 </style>
 </head>
 <body>
@@ -30,8 +31,11 @@ const app = {
       {"itemid": "x002", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
       {"itemid": "x003", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "water"},
       {"itemid": "x004", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "snack"},
+      {"itemid": "x004", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "milk"},
+      {"itemid": "x004", "place": "シビックセンター区民会議室", "lnglat": [139.741, 35.715], "itemtype": "milk"},
       {"itemid": "x014", "place": "XXXXX公民館", "lnglat": [139.73 + Math.random()/50, 35.721], "itemtype": "water"},
       {"itemid": "x025", "place": "YYYYY事務所", "lnglat": [139.721, 35.72 + Math.random()/50], "itemtype": "snack"},
+      {"itemid": "x025", "place": "ZZZZZセンター", "lnglat": [139.74, 35.7 + Math.random()/50], "itemtype": "milk"},
     );
     app.items.reduce((p,i)=>{
       if(!p[i.place]){p[i.place]={lnglat: [i.lnglat[1], i.lnglat[0]], items: {}}};
@@ -47,7 +51,7 @@ const app = {
 // view
 const view = {
   basemaps: {
-    "淡色": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html#std">国土地理院</a>' }),
+    "淡色": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html#std">国土地理院</a>',tileSize: 512, zoomOffset: -1 }),
     "標準":  L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html#std">国土地理院</a>' })
   },
   map: null,
@@ -58,9 +62,10 @@ const view = {
   init: ()=>{
     view.icons.water = new view.LeafIcon({iconUrl: '/ghp2020/web/icons/bottle_water.png', name: "水"});
     view.icons.snack = new view.LeafIcon({iconUrl: '/ghp2020/web/icons/sweets_pocky.png', name: "おやつ"});
+    view.icons.milk = new view.LeafIcon({iconUrl: '/ghp2020/web/icons/baby_milk_mark.png', name: "ミルク"});
     view.map = L.map('map',{
       center: [35.715047,139.7483381],
-      zoom: 14, minZoom: 11, maxZoom: 16,
+      zoom: 14, minZoom: 11, maxZoom: 17,
       layers: [view.basemaps["淡色"]]
     });
     Object.keys(view.icons).map(icon=>{
@@ -75,8 +80,9 @@ const view = {
       onAdd: function(map) {
         const div = L.DomUtil.create('div', 'custom-panel');
         controls.forEach(control=>{
-          const btnreload = document.createElement('button');
-          btnreload.innerText = control.name;
+          const btnreload = document.createElement('i');
+          if(control.name){ btnreload.innerText = control.name }
+          if(control.className){ btnreload.className = control.className }
           btnreload.addEventListener('click', e=>{
             control.action(e);
           });
@@ -101,8 +107,11 @@ const view = {
   addItemMarker: (itemtype, lnglat, place, items)=>{
     const m = L.marker(lnglat, {icon: view.icons[itemtype]}).addTo(view.itemlayers[itemtype]);
     const l = Object.keys(items).map(i=>`${view.icons[i].options.name}: ${app.places[place].items[i]}`).join("<br/>");
-    m.bindPopup(`${place}<br/>${l}`, {className: 'itempopup'});
-  }
+    m.bindPopup(`${place}<br/>${l}`, {className: 'itempopup', maxWidth: 500});
+  },
+  toggleItemLayers: layers => {
+    layers.forEach(layer => { if(view.map.hasLayer(view.itemlayers[layer])){view.itemlayers[layer].remove()}else{view.itemlayers[layer].addTo(view.map)} });
+  },
 }
 view.init();
 
@@ -110,20 +119,28 @@ window.onload = ()=>{
   const reload = ()=>{
     app.getItems();
     view.clearItemMarkers();
+    let b1 = [90, 180];
+    let b2 = [0, 0];
     app.items.reduce((done, item)=>{
       if(!([item.itemtype, item.place].join("") in done)){
-        view.addItemMarker(item.itemtype, app.places[item.place].lnglat, item.place, app.places[item.place].items);
+        const lnglat = app.places[item.place].lnglat;
+        b1 = [Math.min(b1[0], lnglat[0] - .01), Math.min(b1[1], lnglat[1] - .01)];
+        b2 = [Math.max(b2[0], lnglat[0] + .01), Math.max(b2[1], lnglat[1] + .01)];
+        view.addItemMarker(item.itemtype, lnglat, item.place, app.places[item.place].items);
         done[[item.itemtype, item.place].join("")] = true;
       }
       return done;
     }, {});
+    view.map.fitBounds(L.latLngBounds(b1, b2));
   };
   const debug = e=>{
     console.log(e);
   }
   view.initControl([
-    { name: "reload", action: reload },
-    { name: "debug", action: debug}
+    { className: "fas fa-redo fa-5x", action: reload },
+    { className: "fas fa-tint fa-5x", action: ()=>view.toggleItemLayers(["water"])} ,
+    { className: "fas fa-utensils fa-5x", action: ()=>view.toggleItemLayers(["snack", "milk"])} ,
+    { className: "fas fa-bug", action: debug}
   ]);
   reload();
 }
